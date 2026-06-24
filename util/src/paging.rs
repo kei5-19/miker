@@ -258,7 +258,7 @@ impl From<VirtualAddress> for u64 {
 /// | 51:12 | Physical address of the next structure. |
 /// | 62:52 | Ignored. |
 /// | 63 (XD) | If IA32_EFER.NXE = 1, execute-disable; otherwise, must be 0. |
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 #[repr(transparent)]
 pub struct PageEntry(u64);
 
@@ -305,6 +305,28 @@ impl PageEntry {
         self
     }
 
+    /// Returns whether the page is write-through enabled.
+    pub fn write_through(&self) -> bool {
+        self.0.get_bit(3)
+    }
+
+    /// If `value` is `true`, sets the page write-through enabled.
+    pub fn set_write_through(&mut self, value: bool) -> &mut Self {
+        self.0.set_bit(3, value);
+        self
+    }
+
+    /// Returns whether the page is cache disabled.
+    pub fn cache(&self) -> bool {
+        self.0.get_bit(4)
+    }
+
+    /// If `value` is `true`, the page is cache disabled.
+    pub fn set_cache(&mut self, value: bool) -> &mut Self {
+        self.0.set_bit(4, value);
+        self
+    }
+
     /// Returns whether the [PageEntry] allows user-mode access.
     pub fn user(&self) -> bool {
         self.0.get_bit(2)
@@ -335,6 +357,18 @@ impl PageEntry {
     /// If `value` is `true`, the [PageEntry] is global.
     pub fn set_global(&mut self, value: bool) -> &mut Self {
         self.0.set_bit(8, value);
+        self
+    }
+
+    /// Returns whether the execute-disabled flag is set of the [PageEntry].
+    /// The page is execute disabled only when `IA32_EFER.NXE = 1`.
+    pub fn execute_disabled(&self) -> bool {
+        self.0.get_bit(63)
+    }
+
+    /// If `value` is `true` and `IA32_EFER.NXE = 1`, the page is execute disabled.
+    pub fn set_execute_disabled(&mut self, value: bool) -> &mut Self {
+        self.0.set_bit(63, value);
         self
     }
 
@@ -395,6 +429,52 @@ impl PageEntry {
     pub unsafe fn set_next_from_addr(&mut self, next: u64) -> &mut Self {
         self.0.set_bits(12..52, next.get_bits(12..));
         self
+    }
+}
+
+impl core::fmt::Debug for PageEntry {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        use crate::buffer::StrBuf;
+        use core::fmt::Write as _;
+
+        const NAME: &str = "PageTableEntry";
+
+        if !self.present() {
+            return write!(f, "{}(Not Present)", NAME);
+        }
+
+        let mut buf = [0u8; 32];
+        let mut flags = StrBuf::new(&mut buf);
+        write!(flags, "P")?;
+        if self.writable() {
+            write!(flags, "|R/W")?;
+        }
+        if self.user() {
+            write!(flags, "|U/S")?;
+        }
+        if self.write_through() {
+            write!(flags, "|PWT")?;
+        }
+        if self.cache() {
+            write!(flags, "|PCD")?;
+        }
+        if self.accessed() {
+            write!(flags, "|A")?;
+        }
+        if self.page_size() {
+            write!(flags, "|PS")?;
+        }
+        if self.global() {
+            write!(flags, "|G")?;
+        }
+        if self.execute_disabled() {
+            write!(flags, "|XD")?;
+        }
+
+        f.debug_struct("PageEntry")
+            .field("next", &unsafe { self.next_addr() })
+            .field("flags", &flags.to_str())
+            .finish()
     }
 }
 
