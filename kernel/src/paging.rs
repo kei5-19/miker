@@ -2,7 +2,7 @@
 
 use core::mem;
 
-use util::paging::{ADDRESS_CONVERTER, AddressConverter, PAGE_SIZE, PageTable, VirtualAddress};
+use util::paging::{ADDRESS_CONVERTER, AddressConverter, PageTable, VirtualAddress};
 use util::{
     asmfunc,
     paging::PageEntry,
@@ -47,10 +47,6 @@ static STRAIGHT_PDPT: InterruptFreeMutex<PageTable> = InterruptFreeMutex::new(Pa
 static STRAIGHT_PDS: InterruptFreeMutex<[PageTable; 512]> =
     InterruptFreeMutex::new(unsafe { mem::zeroed() });
 
-/// PT used for straight page map from the end of the kernel to the next 2-MB aligned.
-static STRAIGHT_PT_FOR_REMAINDERS: InterruptFreeMutex<PageTable> =
-    InterruptFreeMutex::new(PageTable::new());
-
 /// Initialize straight mapping of physical address `0` to virtual address
 /// [`STRAIGHT_PAGE_MAP_BASE`] with size [`STRAIGHT_PAGE_SIZE`] for kernel. The physical memory
 /// space where the kernel is located are excluded to avoid overwrite the content.
@@ -76,12 +72,7 @@ pub fn init_straight_mapping() {
     KERNEL_PHYS_BASE.init(kernel_phys_base);
     KERNEL_PHYS_END.init(KERNEL_VIRT_END.addr - KERNEL_VIRT_BASE.addr + kernel_phys_base);
 
-    let phys_end_2mb_base = KERNEL_PHYS_END.get() >> 21 << 21;
-    let phys_end_page_aligned = KERNEL_PHYS_END.div_ceil(PAGE_SIZE as _) * (PAGE_SIZE as u64);
-    let phys_space_is_2mb_aligned = phys_end_2mb_base == phys_end_page_aligned;
-
-    // Initialize 512 x 512 x 2 MiB straight mapping (with skip of the space where the kernel is
-    // located).
+    // Initialize 512 x 512 x 2 MiB straight mapping.
     for (i, (pdp_entry, pd)) in STRAIGHT_PDPT
         .lock()
         .iter_mut()
@@ -93,41 +84,8 @@ pub fn init_straight_mapping() {
             #[allow(clippy::identity_op)]
             let addr = (i << (12 + 9 * 2)) + (j << (12 + 9 * 1));
 
-            // Skip the kernel space.
-            if (KERNEL_PHYS_BASE.get()..phys_end_2mb_base).contains(&addr) {
-                continue;
-            }
-
-            if !phys_space_is_2mb_aligned && addr == phys_end_2mb_base {
-                // There is remainder space where the kernel is not located and whose size is less
-                // than 2 MB. We must map it as 4-KB straight mapping.
-                let mut pt = STRAIGHT_PT_FOR_REMAINDERS.lock();
-                for (k, pt_entry) in pt
-                    .iter_mut()
-                    .enumerate()
-                    .skip(((phys_end_page_aligned - phys_end_2mb_base) as usize) / PAGE_SIZE)
-                {
-                    let addr = addr + (k << 12) as u64;
-                    // Since these pages are for kernel, set as writable and supervisor pages.
-                    // Safety: this `addr` is 4-KB aligned.
-                    *pt_entry = unsafe { PageEntry::new(addr, true, false) };
-                    pt_entry.set_global(true);
-                }
-                // Safety: pt is properly aligned because it is a `PageTable`.
-                // Also unwrapping succeeds because `pt` is existing kernel data.
-                *pd_entry = unsafe {
-                    PageEntry::new(
-                        virt_to_phys(pt.as_ref().as_ptr() as u64).unwrap(),
-                        true,
-                        false,
-                    )
-                };
-            } else {
-                // Since these pages are for kernel, set as writable and supervisor pages.
-                // Safety: this `addr` is 4-KB aligned.
-                *pd_entry = unsafe { PageEntry::new(addr, true, false) };
-                pd_entry.set_page_size(true);
-            }
+            *pd_entry = unsafe { PageEntry::new(addr, true, false) };
+            pd_entry.set_page_size(true);
             pd_entry.set_global(true);
         }
         // Safety: `pd` is properly aligned because this is `PageTable`.
