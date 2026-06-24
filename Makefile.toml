@@ -27,7 +27,7 @@ alias = "make-image-release"
 
 [tasks.member-release]
 private = true
-run_task = { name = "release", fork = true, paralell = true }
+run_task = { name = "release", fork = true, parallel = true }
 
 [tasks.member-build]
 private = true
