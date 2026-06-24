@@ -278,6 +278,7 @@ unsafe fn set_page_tables(
             ptr::write_bytes(ptr as *mut u8, 0, PAGE_SIZE);
             // Since this is not PT, we set the page is writable.
             level_table[vaddr.get_level_index(level)] = PageEntry::new(ptr, true, false);
+            level_table[vaddr.get_level_index(level)].set_global(true);
         }
         // Next page table is definitely set above, so this unwrapping always succeeds.
         level_table = level_table[vaddr.get_level_index(level)]
@@ -289,6 +290,7 @@ unsafe fn set_page_tables(
     for i in 0..num_pages_in_frame {
         level_table[vaddr.pt_index() + i] =
             PageEntry::new(phaddr + (i * PAGE_SIZE) as u64, writable, false);
+        level_table[vaddr.pt_index() + i].set_global(true);
     }
 
     Ok(num_pages_in_frame as _)

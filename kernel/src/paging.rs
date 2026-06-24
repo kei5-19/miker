@@ -111,6 +111,7 @@ pub fn init_straight_mapping() {
                     // Since these pages are for kernel, set as writable and supervisor pages.
                     // Safety: this `addr` is 4-KB aligned.
                     *pt_entry = unsafe { PageEntry::new(addr, true, false) };
+                    pt_entry.set_global(true);
                 }
                 // Safety: pt is properly aligned because it is a `PageTable`.
                 // Also unwrapping succeeds because `pt` is existing kernel data.
@@ -127,11 +128,13 @@ pub fn init_straight_mapping() {
                 *pd_entry = unsafe { PageEntry::new(addr, true, false) };
                 pd_entry.set_page_size(true);
             }
+            pd_entry.set_global(true);
         }
         // Safety: `pd` is properly aligned because this is `PageTable`.
         // Also unwrapping succeeds because `pd` is existing kernel data.
         *pdp_entry =
             unsafe { PageEntry::new(virt_to_phys(pd as *const _ as u64).unwrap(), true, false) };
+        pdp_entry.set_global(true);
     }
     // Safety: `STRAIGHT_PDPT` is properly aligned because this is `PageTable`.
     // Also unwrapping succeeds because `STRAIGHT_PDPT` is existing kernel data.
@@ -142,6 +145,7 @@ pub fn init_straight_mapping() {
             false,
         )
     };
+    pml4[STRAIGHT_PAGE_MAP_BASE.pml4_index()].set_global(true);
 
     ADDRESS_CONVERTER.init(AddressConverter::new(phys_to_virt2));
 }

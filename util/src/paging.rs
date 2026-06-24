@@ -327,6 +327,17 @@ impl PageEntry {
         self
     }
 
+    /// Returns whether the [PageEntry] translation is global.
+    pub fn global(&self) -> bool {
+        self.0.get_bit(8)
+    }
+
+    /// If `value` is `true`, the [PageEntry] is global.
+    pub fn set_global(&mut self, value: bool) -> &mut Self {
+        self.0.set_bit(8, value);
+        self
+    }
+
     /// Returns whether software has accessed the page table of page referenced by this
     /// [PageEntry].
     pub fn accessed(&self) -> bool {
