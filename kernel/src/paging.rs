@@ -110,7 +110,7 @@ pub fn init_straight_mapping() {
 
 /// Converts physical address `addr` to virtual address if there is such mapping. Otherwise
 /// returns `None`. This is only for kernel.
-pub const fn pyhs_to_virt(addr: u64) -> Option<VirtualAddress> {
+pub const fn phys_to_virt(addr: u64) -> Option<VirtualAddress> {
     if addr <= STRAIGHT_PAGE_SIZE {
         Some(VirtualAddress::new(addr + STRAIGHT_PAGE_MAP_BASE.addr))
     } else {
@@ -137,5 +137,5 @@ pub fn virt_to_phys(addr: impl Into<VirtualAddress>) -> Option<u64> {
 /// Converts physical address `addr` to virtual address. Returns `0` if and only if there is no
 /// such mapping.
 fn phys_to_virt2(addr: u64) -> u64 {
-    pyhs_to_virt(addr).map(|addr| addr.addr).unwrap_or(0)
+    phys_to_virt(addr).map(|addr| addr.addr).unwrap_or(0)
 }

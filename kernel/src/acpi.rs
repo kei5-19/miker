@@ -21,7 +21,7 @@ pub fn init(runtime: SystemTable<Runtime>) -> Result<()> {
             if config.guid == ACPI2_GUID {
                 // Addresses in ACPI2 are referenced as physical. See
                 // https://uefi.org/specs/UEFI/2.10/04_EFI_System_Table.html#industry-standard-configuration-tables
-                let addr = paging::pyhs_to_virt(config.address as _).unwrap();
+                let addr = paging::phys_to_virt(config.address as _).unwrap();
                 // Safety: `runtime` and `phys_to_virt()` are proper.
                 break 'search match unsafe { Rsdp::from_ptr(addr.addr as _) } {
                     Ok(rsdp) => rsdp,

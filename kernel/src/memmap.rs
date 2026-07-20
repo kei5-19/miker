@@ -187,7 +187,7 @@ impl PageMap {
             let Some(desc) = memmap.get_mut(index) else {
                 break;
             };
-            desc.virt_start = paging::pyhs_to_virt(desc.phys_start)
+            desc.virt_start = paging::phys_to_virt(desc.phys_start)
                 .map(|addr| addr.addr)
                 .unwrap_or(0);
         }
@@ -237,7 +237,7 @@ impl PageMap {
             unsafe {
                 // Fail when `runtime` address is over 512 GB, but this situation is not supported.
                 let new_runtime_addr =
-                    paging::pyhs_to_virt(runtime.get_current_system_table_addr())
+                    paging::phys_to_virt(runtime.get_current_system_table_addr())
                         .unwrap()
                         .addr;
                 // Safety: Memory map is properly set.
@@ -252,7 +252,7 @@ impl PageMap {
         let _lock = self.lock.lock();
         // Safety: This is safe because just mapping with new page map.
         let memmap = unsafe {
-            &mut *(paging::pyhs_to_virt(memmap as *mut MemoryMap as _)
+            &mut *(paging::phys_to_virt(memmap as *mut MemoryMap as _)
                 .unwrap()
                 .addr as *mut _)
         };

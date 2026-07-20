@@ -53,7 +53,7 @@ fn main(fb_info: &FrameBufferInfo, memmap: &'static mut MemoryMap, runtime: Syst
     //   do is just mapping it properly.
     let runtime = unsafe { PAGE_MAP.init(memmap, runtime) };
     let fb_info = FrameBufferInfo {
-        frame_buffer: paging::pyhs_to_virt(fb_info.frame_buffer as _)
+        frame_buffer: paging::phys_to_virt(fb_info.frame_buffer as _)
             .unwrap()
             .addr as _,
         ..fb_info.clone()
