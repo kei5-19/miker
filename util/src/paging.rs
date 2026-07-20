@@ -478,6 +478,24 @@ impl core::fmt::Debug for PageEntry {
     }
 }
 
+impl core::fmt::Binary for PageEntry {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        core::fmt::Binary::fmt(&self.0, f)
+    }
+}
+
+impl core::fmt::LowerHex for PageEntry {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        core::fmt::LowerHex::fmt(&self.0, f)
+    }
+}
+
+impl core::fmt::UpperHex for PageEntry {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        core::fmt::UpperHex::fmt(&self.0, f)
+    }
+}
+
 impl Default for PageEntry {
     fn default() -> Self {
         Self::null()
