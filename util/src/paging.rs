@@ -169,7 +169,7 @@ impl AsMut<[u8]> for PageTable {
 }
 
 /// Provides ease ways to access each page entries from a virtual address.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct VirtualAddress {
     /// Exact virtual address.
     pub addr: u64,
@@ -227,6 +227,62 @@ impl VirtualAddress {
     pub fn offset(&self) -> u64 {
         self.get_level_index(0) as _
     }
+
+    /// The address as u64.
+    #[inline]
+    pub const fn as_u64(self) -> u64 {
+        self.addr
+    }
+
+    /// Whether the address is aligned to `align`.
+    #[cfg_attr(not(debug_assertions), inline)]
+    pub const fn is_aligned(self, align: u64) -> bool {
+        debug_assert!(align.is_power_of_two(), "`align` must be a power of two");
+
+        self.addr & (align - 1) == 0
+    }
+
+    /// The next address aligned to `align`.
+    #[cfg_attr(not(debug_assertions), inline)]
+    pub const fn align_up(self, align: u64) -> Self {
+        debug_assert!(align.is_power_of_two(), "`align` must be a power of two");
+
+        #[cfg(debug_assertions)]
+        let added = if let Some(addr) = self.addr.checked_add(align - 1) {
+            addr
+        } else {
+            panic!("VirtualAddress::align_up overflowed");
+        };
+
+        #[cfg(not(debug_assertions))]
+        let added = self.addr + align - 1;
+
+        Self {
+            addr: added & !(align - 1),
+        }
+    }
+
+    /// The previous address aligned to `align`.
+    #[cfg_attr(not(debug_assertions), inline)]
+    pub const fn align_down<T>(self, align: u64) -> Self {
+        debug_assert!(align.is_power_of_two(), "`align` must be a power of two");
+
+        Self {
+            addr: self.addr & !(align - 1),
+        }
+    }
+
+    /// Converts the address to the pointer of `T`.
+    #[inline]
+    pub const fn as_ptr<T>(self) -> *const T {
+        self.addr as _
+    }
+
+    /// Converts the address to the mutable pointer of `T`.
+    #[inline]
+    pub const fn as_mut_ptr<T>(self) -> *mut T {
+        self.addr as _
+    }
 }
 
 impl From<u64> for VirtualAddress {
@@ -237,6 +293,46 @@ impl From<u64> for VirtualAddress {
 
 impl From<VirtualAddress> for u64 {
     fn from(value: VirtualAddress) -> Self {
+        value.addr
+    }
+}
+
+/// Physical address.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub struct PhysicalAddress {
+    addr: u64,
+}
+
+impl PhysicalAddress {
+    /// The upper limit of the [PhysicalAddress].
+    pub const PHYS_MEM_MAX: u64 = (1 << (9 * 4 + 12)) - 1;
+
+    /// [PhysicalAddress] whose address is `addr`.
+    #[cfg_attr(not(debug_assertions), inline)]
+    pub const fn new(addr: u64) -> Self {
+        #[cfg(debug_assertions)]
+        if Self::PHYS_MEM_MAX < addr {
+            panic!("Too large physical address");
+        }
+
+        Self { addr }
+    }
+
+    /// The address as u64.
+    #[inline]
+    pub const fn as_u64(self) -> u64 {
+        self.addr
+    }
+}
+
+impl From<u64> for PhysicalAddress {
+    fn from(value: u64) -> Self {
+        Self::new(value)
+    }
+}
+
+impl From<PhysicalAddress> for u64 {
+    fn from(value: PhysicalAddress) -> Self {
         value.addr
     }
 }
