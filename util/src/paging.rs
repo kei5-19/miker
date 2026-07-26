@@ -170,6 +170,7 @@ impl AsMut<[u8]> for PageTable {
 
 /// Provides ease ways to access each page entries from a virtual address.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[repr(transparent)]
 pub struct VirtualAddress {
     /// Exact virtual address.
     pub addr: u64,
@@ -299,6 +300,7 @@ impl From<VirtualAddress> for u64 {
 
 /// Physical address.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[repr(transparent)]
 pub struct PhysicalAddress {
     addr: u64,
 }
