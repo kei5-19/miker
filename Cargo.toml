@@ -9,6 +9,12 @@ authors = ["kei519 <masaki.keigo.q00@kyoto-u.jp>"]
 description = "A MICro KERnel OS for me to study."
 readme = "README.md"
 
+[workspace.lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+improper_ctypes = "deny"
+improper_ctypes_definitions = "deny"
+missing_docs = "warn"
+
 [profile.dev]
 opt-level = 0
 debug = 2
