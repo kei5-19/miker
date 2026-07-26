@@ -1,5 +1,6 @@
 #![no_std]
 #![allow(missing_docs)]
+#![allow(clippy::undocumented_unsafe_blocks)]
 
 pub mod acpi;
 pub mod driver;

@@ -1,6 +1,7 @@
 #![no_std]
 #![no_main]
 #![allow(missing_docs)]
+#![allow(clippy::undocumented_unsafe_blocks)]
 
 extern crate alloc;
 

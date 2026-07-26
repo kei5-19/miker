@@ -1,6 +1,7 @@
 //! Utility library widely used in MIKer.
 
 #![cfg_attr(not(test), no_std)]
+#![allow(clippy::undocumented_unsafe_blocks)]
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
