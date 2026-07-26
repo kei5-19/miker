@@ -7,7 +7,7 @@ skip_git_env_info = true
 skip_rust_env_info = true
 
 [env]
-CARGO_MAKE_WORKSPACE_SKIP_MEMBERS = ["macros", "util"]
+CARGO_MAKE_WORKSPACE_SKIP_MEMBERS_WHEN_BUILD = ["macros", "util"]
 
 DISK_IMG = "${CARGO_MAKE_CRATE_TARGET_DIRECTORY}/disk.img"
 MOUNT_POINT = "${CARGO_MAKE_CRATE_TARGET_DIRECTORY}/mnt"
@@ -27,10 +27,12 @@ alias = "make-image-release"
 
 [tasks.member-release]
 private = true
+env = { "CARGO_MAKE_WORKSPACE_SKIP_MEMBERS" = "${CARGO_MAKE_WORKSPACE_SKIP_MEMBERS_WHEN_BUILD}" }
 run_task = { name = "release", fork = true, parallel = true }
 
 [tasks.member-build]
 private = true
+env = { "CARGO_MAKE_WORKSPACE_SKIP_MEMBERS" = "${CARGO_MAKE_WORKSPACE_SKIP_MEMBERS_WHEN_BUILD}" }
 run_task = { name = "build", fork = true, parallel = true }
 
 [tasks.check]

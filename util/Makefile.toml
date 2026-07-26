@@ -6,8 +6,8 @@ skip_crate_env_info = true
 
 [tasks.check]
 command = "cargo"
-args = ["check"]
+args = ["check", "--target=x86_64-unknown-none"]
 
 [tasks.clippy]
 command = "cargo"
-args = ["clippy"]
+args = ["clippy", "--target=x86_64-unknown-none"]
