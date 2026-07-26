@@ -1,7 +1,6 @@
 #![no_std]
 #![no_main]
 #![allow(missing_docs)]
-#![allow(clippy::undocumented_unsafe_blocks)]
 
 extern crate alloc;
 
@@ -104,7 +103,7 @@ fn main2(runtime: SystemTable<Runtime>) -> Result<()> {
 
     TSS.init(descriptor::TSS::new(
         &[],
-        &[unsafe { stack_for_timer_interrupt.byte_add(2 * PAGE_SIZE) } as _],
+        &[stack_for_timer_interrupt as u64 + 2 * PAGE_SIZE as u64],
     ));
     gdt.set(3, SystemDescriptor::new_tss(TSS.as_ref(), 0))?;
 
