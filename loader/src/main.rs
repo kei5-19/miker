@@ -31,7 +31,7 @@ use uefi::{
 use util::{
     asmfunc,
     elf::{Elf64Ehdr, Elf64Phdr, ElfProgType},
-    paging::{PAGE_SIZE, PageEntry, PageTable, VirtualAddress},
+    paging::{PAGE_SIZE, PageEntry, PageTable, PhysicalAddress, VirtualAddress},
     screen::{FrameBufferInfo, PixelFormat},
 };
 
@@ -219,6 +219,7 @@ unsafe fn actual_main(image: Handle, st: SystemTable<Boot>) -> Result<(), MyErro
         frame_buffer: graphics.frame_buffer().as_mut_ptr() as _,
     };
     drop(graphics);
+    let fb_info = PhysicalAddress::new(&raw const fb_info as _);
 
     // Exit UEFI boot service to pass the control to kernel
     let (runtime_services, mut memmap) = st.exit_boot_services(MemoryType::LOADER_DATA);
@@ -226,9 +227,9 @@ unsafe fn actual_main(image: Handle, st: SystemTable<Boot>) -> Result<(), MyErro
     // Set new PML4.
     asmfunc::set_cr3(new_pml4 as *const _ as _);
 
-    type EntryFn = extern "sysv64" fn(&FrameBufferInfo, &mut MemoryMap, SystemTable<Runtime>) -> !;
+    type EntryFn = extern "sysv64" fn(PhysicalAddress, &mut MemoryMap, SystemTable<Runtime>) -> !;
     let kernel_entry: EntryFn = transmute(elf_header.entry);
-    kernel_entry(&fb_info, &mut memmap, runtime_services);
+    kernel_entry(fb_info, &mut memmap, runtime_services);
 }
 
 /// Get protocol `P` from boot servieces.

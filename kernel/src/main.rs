@@ -20,7 +20,7 @@ use util::{
     descriptor::{self, GDT, SegmentDescriptor, SegmentType, SystemDescriptor},
     error::Result,
     graphics::GrayscalePrint as _,
-    paging::PAGE_SIZE,
+    paging::{PAGE_SIZE, PhysicalAddress},
     screen::{FrameBufferInfo, Screen},
     sync::OnceStatic,
 };
@@ -47,11 +47,25 @@ _start:
 static TSS: OnceStatic<descriptor::TSS> = OnceStatic::new();
 
 #[unsafe(no_mangle)]
-fn main(fb_info: &FrameBufferInfo, memmap: &'static mut MemoryMap, runtime: SystemTable<Runtime>) {
+fn main(fb_info: PhysicalAddress, memmap: &'static mut MemoryMap, runtime: SystemTable<Runtime>) {
     // Safety: There is one processor running and this is the first time to initialize.
     //   There is only `fb_info` that uses first half parts of virtual address. So, all we have to
     //   do is just mapping it properly.
     let runtime = unsafe { PAGE_MAP.init(memmap, runtime) };
+
+    // Safety:
+    //   * The pointer is properly aligned because align of FrameBufferInfo is smaller than the page
+    //     size.
+    //   * It is not null.
+    //   * It points to a valid value because it is just mapped.
+    //   * The memory it points to does not get mutated because it was owned by loader but it is
+    //     exited, and there is no other threads.
+    let fb_info = unsafe {
+        paging::phys_to_virt(fb_info.as_u64())
+            .unwrap()
+            .as_ptr::<FrameBufferInfo>()
+            .as_ref_unchecked()
+    };
     let fb_info = FrameBufferInfo {
         frame_buffer: paging::phys_to_virt(fb_info.frame_buffer as _)
             .unwrap()

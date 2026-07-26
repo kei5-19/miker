@@ -14,6 +14,7 @@ use uefi::table::{
     boot::{MemoryMap, MemoryType},
 };
 use util::{
+    asmfunc,
     paging::{PAGE_SIZE, PageEntry},
     sync::InterruptFreeMutex,
 };
@@ -260,6 +261,8 @@ impl PageMap {
         unsafe { *self.memmap.get() = Some(memmap) };
         // Dropping.
         KERNEL_PML4.as_ref().lock()[0] = PageEntry::null();
+        // Flush TLB.
+        asmfunc::set_cr3(asmfunc::get_cr3());
 
         runtime
     }
