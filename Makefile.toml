@@ -72,7 +72,7 @@ OPTIONS+="-drive if=pflash,format=raw,file=${OVMF_VARS} \
     ${@}
 "
 
-if [[ -z on_mac ]]; then
+if [[ ! -v on_mac ]]; then
     OPTIONS+="-enable-kvm"
 fi
 
