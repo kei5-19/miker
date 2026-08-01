@@ -14,6 +14,10 @@ name = "kernel"
 test = false
 bench = false
 
+[lib]
+test = false
+bench = false
+
 [dependencies]
 log = "0.4.32"
 paste = "*"

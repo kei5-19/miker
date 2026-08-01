@@ -1,3 +1,5 @@
+#![allow(missing_docs)]
+
 use util::sync::OnceStatic;
 
 #[test]
@@ -27,14 +29,14 @@ fn test_once_static_from() {
 }
 
 #[test]
-#[should_panic(expected = "OnceStatic is not initialized")]
+#[should_panic(expected = "is not initialized!")]
 fn test_once_static_panic_as_ref() {
     static VAL: OnceStatic<String> = OnceStatic::new();
     VAL.as_ref();
 }
 
 #[test]
-#[should_panic(expected = "OnceStatic is not initialized")]
+#[should_panic(expected = "is not initialized!")]
 fn test_once_static_panic_as_get() {
     static VAL: OnceStatic<char> = OnceStatic::new();
     VAL.get();

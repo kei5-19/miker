@@ -1,3 +1,5 @@
+#![allow(missing_docs)]
+
 use std::fmt::Write as _;
 
 use util::buffer::StrBuf;
