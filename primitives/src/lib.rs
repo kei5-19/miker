@@ -4,4 +4,6 @@
 
 mod mem;
 
+pub mod paging;
+
 pub use mem::*;
