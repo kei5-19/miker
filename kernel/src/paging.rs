@@ -1,7 +1,5 @@
 //! Provides some useful items to control paging.
 
-use core::mem;
-
 use util::paging::{ADDRESS_CONVERTER, AddressConverter, PageTable, VirtualAddress};
 use util::{
     asmfunc,
@@ -42,11 +40,6 @@ pub static KERNEL_PML4: OnceStatic<InterruptFreeMutex<&'static mut PageTable>> =
 /// PDPT used for straight page map.
 static STRAIGHT_PDPT: InterruptFreeMutex<PageTable> = InterruptFreeMutex::new(PageTable::new());
 
-/// 512 PDs used for straight page map.
-// Safety: PageTable all whose fields are zero is valid.
-static STRAIGHT_PDS: InterruptFreeMutex<[PageTable; 512]> =
-    InterruptFreeMutex::new(unsafe { mem::zeroed() });
-
 /// Initialize straight mapping of physical address `0` to virtual address
 /// [`STRAIGHT_PAGE_MAP_BASE`] with size [`STRAIGHT_PAGE_SIZE`] for kernel. The physical memory
 /// space where the kernel is located are excluded to avoid overwrite the content.
@@ -72,26 +65,12 @@ pub fn init_straight_mapping() {
     KERNEL_PHYS_BASE.init(kernel_phys_base);
     KERNEL_PHYS_END.init(KERNEL_VIRT_END.addr - KERNEL_VIRT_BASE.addr + kernel_phys_base);
 
-    // Initialize 512 x 512 x 2 MiB straight mapping.
-    for (i, (pdp_entry, pd)) in STRAIGHT_PDPT
-        .lock()
-        .iter_mut()
-        .zip(STRAIGHT_PDS.lock().iter_mut())
-        .enumerate()
-    {
-        for (j, pd_entry) in pd.iter_mut().enumerate() {
-            let (i, j) = (i as u64, j as u64);
-            #[allow(clippy::identity_op)]
-            let addr = (i << (12 + 9 * 2)) + (j << (12 + 9 * 1));
-
-            *pd_entry = unsafe { PageEntry::new(addr, true, false) };
-            pd_entry.set_page_size(true);
-            pd_entry.set_global(true);
-        }
-        // Safety: `pd` is properly aligned because this is `PageTable`.
-        // Also unwrapping succeeds because `pd` is existing kernel data.
-        *pdp_entry =
-            unsafe { PageEntry::new(virt_to_phys(pd as *const _ as u64).unwrap(), true, false) };
+    // Initialize 512 x 1 GiB straight mapping.
+    for (i, pdp_entry) in STRAIGHT_PDPT.lock().iter_mut().enumerate() {
+        let i = i as u64;
+        let addr = i << (12 + 9 * 2);
+        *pdp_entry = unsafe { PageEntry::new(addr, true, false) };
+        pdp_entry.set_page_size(true);
         pdp_entry.set_global(true);
     }
     // Safety: `STRAIGHT_PDPT` is properly aligned because this is `PageTable`.
